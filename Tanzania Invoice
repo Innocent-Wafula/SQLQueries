@@ -1,0 +1,48 @@
+select 
+Distinct CountryName
+	,DistrictName
+	,DimSiteId
+	,SiteName
+	,GroupName
+	,FirstName
+	,LastName
+	,OAFID 
+	,GlobalClientID
+	,BundleName
+	,InputName
+	,Sum(InputCredit) as InputCredit
+	,OperationalYear
+    --,concat(DimInputID,BundleName,SelectionGroup) as UniqueID
+	,SUM(Round(InputCredit/1.19,-2)) as CalculatedInputCredit
+	,SUM(Round(InputCredit, -2)) - SUM(Round(InputCredit/1.19,-2)) as CreditFee
+	,CASE WHEN InputName = 'PICS' THEN SUM(Round(InputCredit/1.19,-2)) * 0.18  WHEN  InputName = 'Sun King Boom' THEN SUM(Round(InputCredit/1.19,-2)) * 0.18 WHEN  InputName = 'Mabati' THEN SUM(Round(InputCredit/1.19,-2)) * 0.18
+	WHEN  InputName = 'Kofia ya Mabati' THEN SUM(Round(InputCredit/1.19,-2)) * 0.18 ELSE 0 END AS VAT 
+	,Sum(InputQuantity) as InputQuantity
+	,DimClientId
+	,AccountNumber
+FROM v_ClientInputs
+WHERE CountryName = 'Tanzania'
+and OperationalYear = '2021'
+and DistrictName = @District
+and SiteName in (@Sites)
+and InputName in (@InputName)
+and InputName NOT IN('Dondoo za kuongeza kipato','Client Service Bundle','Delivery Fee','Funeral Insurance')
+--and AccountNumber = 11875399
+
+Group by 
+CountryName
+	,DistrictName
+	,DimSiteId
+	,SiteName
+	,GroupName
+	,FirstName
+	,LastName
+	,OAFID 
+	,GlobalClientID
+	,BundleName
+	,InputName
+	--,DimInputID
+	,OperationalYear
+	--,InputQuantity
+	,DimClientId
+	,AccountNumber
