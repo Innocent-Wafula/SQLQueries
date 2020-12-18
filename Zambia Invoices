@@ -1,0 +1,27 @@
+SELECT 
+	CI.CountryName
+	,CI.DistrictName
+	,CI.SiteName
+	,CI.GroupName
+	,CI.FirstName
+	,CI.LastName
+	,CI.OAFID 
+	,CI.BundleName
+	,CI.InputName
+	,CI.InputCredit
+	,CI.InputQuantity
+	,CI.DimClientId
+	,SC.TotalCredit 
+	,SC.AccountNumber
+
+FROM v_ClientInputs AS CI
+	LEFT JOIN v_ClientSalesBizOps AS SC ON
+		CI.DimClientId=SC.DimClientID	
+
+where CI.CountryName = 'Zambia'
+and CI.SeasonName = @Season
+and CI.DistrictName= @District
+and SC.Season = @Season
+and CI.InputCredit <>0
+
+ORDER BY SiteName,GroupName,OAFID,BundleName, InputCredit DESC 
