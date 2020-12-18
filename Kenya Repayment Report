@@ -1,0 +1,159 @@
+IF OBJECT_ID('tempdb..#VR') IS NOT NULL
+DROP TABLE #VR;
+
+-- Create a table with summarized Repayment data at the client level from VR
+CREATE TABLE #VR (
+	-- Name and format the columns in the table
+	ClientID int,
+	RepaymentSum int
+)
+-- Now add values into the table
+INSERT INTO #VR (ClientID,RepaymentSum)
+SELECT DimClientID as ClientID, SUM(Amount) AS RepaymentSum
+	FROM v_RepaymentBasic
+	WHERE 
+		RepaidDate BETWEEN @StartDate AND @EndDate AND 
+		CountryName = 'Kenya' AND
+		SeasonName = @Season
+AND Amount >0
+	GROUP BY DimClientID
+;
+
+
+IF OBJECT_ID('tempdb..#SR') IS NOT NULL
+DROP TABLE #SR;
+
+CREATE TABLE #SR (
+	-- Name and format the columns in the table
+	SiteID int,
+	SiteRepaymentPCT float
+)
+-- Now add values into the table
+INSERT INTO #SR (SiteID,SiteRepaymentPCT)
+SELECT DimSiteID as SiteID, case when sum(totalcredit) <> 0 then SUM(TotalRepaid) / SUM(Totalcredit) END AS SiteRepaymentPCT
+	FROM v_ClientSalesBizOps
+	WHERE 
+		CountryName = 'Kenya' AND
+		Season = @Season
+	GROUP BY DimSiteID
+;
+
+IF OBJECT_ID('tempdb..#GC') IS NOT NULL
+DROP TABLE #GC;
+
+CREATE TABLE #GC (
+	-- Name and format the columns in the table
+	GroupID int,
+	GP float
+)
+INSERT INTO #GC (GroupID,GP)
+SELECT DimGroupID as GroupID,  SUM(TotalRepaid) / SUM(TotalCredit) AS GP
+	FROM v_ClientSalesBizOps
+	WHERE CountryName = 'Kenya' AND
+		Season = @Season
+		and TotalCredit > 0
+	and TotalRepaid > 0
+	
+	GROUP BY DimGroupID
+;
+
+IF OBJECT_ID('tempdb..#DR') IS NOT NULL
+DROP TABLE #DR;
+
+CREATE TABLE #DR (
+	-- Name and format the columns in the table
+	DistrictID int,
+	DistrictRepaymentPCT float
+)
+-- Now add values into the table
+INSERT INTO #DR (DistrictID,DistrictRepaymentPCT)
+SELECT DimDistrictID as DistrictID, case when sum(totalcredit) <> 0 then SUM(TotalRepaid) / SUM(Totalcredit) END AS DistrictRepaymentPCT
+	FROM v_ClientSalesBizOps
+	WHERE 
+		CountryName = 'Kenya' AND
+		Season = @Season
+	GROUP BY DimDistrictID
+
+SELECT 
+	SC.CountryName
+	,SC.SectorName
+                ,SC.RegionName
+	,SC.DistrictName
+	,SC.DimDistrictID
+	,SC.SiteName
+	,SC.GroupName
+                ,SC.DimGroupID
+	,SC.DimClientID
+	,SC.FirstName
+	,SC.LastName
+	,SC.TotalCredit 
+	,SC.TotalRepaid 
+	,SC.PercentRepaid
+                ,SC.LastRepaymentDate
+				--two Districts with different parameters Sotik and Masaba with the DimDistrictIDs as numbers
+                ,CASE WHEN SC.DimDistrictID IN (89, 117) AND SC.PercentRepaid >= @VEDDTarget THEN 1
+				WHEN SC.DimDistrictID NOT IN (89, 117) AND SC.PercentRepaid >= @CoreTarget THEN 1 ELSE 0 END as Target	
+				,CASE WHEN SC.DimDistrictID IN (89, 117) AND SC.PercentRepaid < @VEDDHealthyPath THEN 1
+				WHEN SC.DimDistrictID NOT IN (89, 117) AND SC.PercentRepaid < @HealthyPath THEN 1 ELSE 0 END as BelowHealthyPath
+	--,CASE WHEN SC.PercentRepaid <= .60 THEN 1 ELSE 0 END as BelowHealthyPath
+                --,CASE WHEN SC.PercentRepaid >= .60 THEN 1 ELSE 0 END AS AboveThreshold
+                ,CASE WHEN SC.DimDistrictID IN (89, 117) AND SC.PercentRepaid < @VEDDHealthyPath AND SC.LastRepaymentDate < DATEADD(WEEK,-4,@EndDate) THEN 1
+				WHEN SC.DimDistrictID NOT IN (89, 117) AND SC.PercentRepaid < @HealthyPath AND SC.LastRepaymentDate < DATEADD(WEEK,-4,@EndDate) THEN 1 ELSE 0 END AS StagnatedClients
+	,ISNULL(VR.RepaymentSum,0) as AMOUNT
+	,CASE WHEN VR.RepaymentSum IS NULL THEN 0 ELSE 1 END as count
+	,SR.SiteRepaymentPCT
+	,DR.DistrictRepaymentPCT
+                ,GC.GP
+                ,Case when GC.GP = 1 Then 1 Else 0 End as GroupPer
+,Case When SC.DistrictName = 'Masaba' Then 'BENSOMS' When SC.DistrictName = 'Sotik' then 'Bensoms' When SC.DistrictName = 'Belgut'Then 'BENSOMS' When SC.DistrictName = 'Nyamira'then 'Bensoms'
+	 	WHEN SC.DistrictName = 'Bungoma' Then 'Busitech' When SC.DistrictName = 'Chwele' then 'Busitech' When SC.DistrictName = 'Sirisia'Then 'Busitech' When SC.DistrictName = 'Teso' then
+			'Busitech' 	WHEN SC.DistrictName = 'Imenti' Then 'Mt.Kenya' When SC.DistrictName = 'Kenol' Then 'Mt.Kenya'
+WHEN SC.DistrictName = 'Manyatta' Then 'Mt.Kenya' When SC.DistrictName = 'Ol Kalou' Then 'Mt.Kenya'
+WHEN SC.DistrictName = 'Sagana' Then 'Mt.Kenya' When SC.DistrictName = 'Baharini' Then 'Eldoret'
+WHEN SC.DistrictName = 'Keiyo' Then 'Eldoret' When SC.DistrictName = 'Matete' Then 'Eldoret'
+WHEN SC.DistrictName = 'Kimilili' Then 'Elgon' When SC.DistrictName = 'Saboti' Then 'Elgon'
+WHEN SC.DistrictName = 'Webuye' Then 'Elgon' When SC.DistrictName = 'Hamisi' Then 'Haviks'
+WHEN SC.DistrictName = 'Kakamega (South)' Then 'Haviks' When SC.DistrictName = 'Vihiga' Then 'Haviks'
+WHEN SC.DistrictName = 'Green Shamba' Then 'Lake' When SC.DistrictName = 'Ndhiwa' Then 'Lake'
+WHEN SC.DistrictName = 'Rongo' Then 'Lake' When SC.DistrictName = 'Kabondo' Then 'Karanya'
+WHEN SC.DistrictName = 'Nyando' Then 'Karanya' When SC.DistrictName = 'Rachuonyo' Then 'Karanya'
+WHEN SC.DistrictName = 'Borabu' Then 'Kigbos' When SC.DistrictName = 'Gucha' Then 'Kigbos'
+WHEN SC.DistrictName = 'Kisii' Then 'Kigbos' When SC.DistrictName = 'Awendo' Then 'Masu'
+WHEN SC.DistrictName = 'Migori' Then 'Masu' When SC.DistrictName = 'Suneka' Then 'Masu'
+WHEN SC.DistrictName = 'Cherangany' Then 'Scheme' When SC.DistrictName = 'Lugari' Then 'Scheme'
+WHEN SC.DistrictName = 'Ndalu' Then 'Scheme' When SC.DistrictName = 'Butere' Then 'Sugar Zone'
+WHEN SC.DistrictName = 'Kakamega B (North)' Then 'Sugar Zone' When SC.DistrictName = 'Mumias' Then 'Sugar Zone'
+WHEN SC.DistrictName = 'Nambale' Then 'Sugar Zone' When SC.DistrictName = 'Njoro' Then 'Tea Zone'
+WHEN SC.DistrictName = 'Kipkelion' Then 'Tea Zone' When SC.DistrictName = 'Kabiyet' Then 'Nandi'
+WHEN SC.DistrictName = 'Kapsabet' Then 'Nandi' When SC.DistrictName = 'Tinderet' Then 'Nandi'
+WHEN SC.DistrictName = 'Alego' Then 'Yala' When SC.DistrictName = 'Busia' Then 'Yala'
+WHEN SC.DistrictName = 'Gem' Then 'Yala' When SC.DistrictName = 'Serabo' Then 'Yala'
+ Else 'A' End as Region
+
+
+FROM v_ClientSalesBizops AS SC
+	LEFT JOIN #VR AS VR ON
+		SC.DimClientID=VR.ClientID	
+		left JOIN #SR AS SR ON
+	    SC.DimSiteID=SR.SiteID
+		left JOIN #DR AS DR ON
+	    SC.DimDistrictID=DR.DistrictID
+		left Join #GC AS GC ON
+		SC.DimGroupID = GC.GroupID	
+		
+WHERE 
+	SC.CountryName = 'Kenya'
+	AND SC.Season = @Season
+                AND SC.TotalCredit > 0
+				and SC.DistrictName <> 'KENYA STAFF'
+and SC.DistrictName <> 'OAF Duka'
+
+
+ORDER BY SC.DistrictName, SC.SiteName ASC
+	
+
+-- Finally, drop the temp table since we don't need it anymore
+DROP TABLE #VR;
+DROP TABLE #SR;
+DROP TABLE #DR;
+DROP TABLE #GC;
