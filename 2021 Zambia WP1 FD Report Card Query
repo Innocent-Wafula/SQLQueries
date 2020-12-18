@@ -1,0 +1,87 @@
+USE ROSTERDATAWAREHOUSE;
+
+
+with groupInfo as(
+select 
+	[FO Name], DistrictName, DimDistrictID,SectorName, DimSectorID, DimSiteID, SiteName, GroupName, 
+	SUM(TotalRepaid) As TotalRepaid,
+	SUM(TotalCredit) As TotalCredit,
+	Count(DIMClientID) as SCI,
+	CASE WHEN SUM(TotalCredit) - SUM(TotalRepaid) <= 100 THEN 1 Else 0  end AS GP
+from
+	v_ClientSalesBizOps
+where
+	CountryName = 'Zambia'
+	AND Season = '2021, Long Rain'
+	--and DistrictName = @District
+	and TotalCredit > 0
+	and TotalRepaid > 0
+group by
+	[FO Name], DistrictName, DimDistrictID, SectorName, DimSectorID, DimSiteID, SiteName, GroupName  )
+-- Second Inner Query
+select 
+	DistrictName, DimDistrictID,
+	SUM(TotalCredit) As TotalCredit,sum(TotalRepaid) As TotalRepaid,
+    sum(GP) As CompletedGroupsCount,
+	Count(GP) AS TGP,
+		Count(Distinct DimSiteID) AS TotalSites,
+		Case when CasT(sum(GP) AS DECIMAL) / Count(GP) >= .90 then 4
+	when Cast(sum(GP) AS DECIMAL) / Count(GP) < .90 AND CasT(sum(GP) AS DECIMAL) / Count(GP) >= .75 then 3
+	when Cast(sum(GP) AS DECIMAL) / Count(GP) < .75 AND CasT(sum(GP) AS DECIMAL) / Count(GP) >= .50 then 2
+	when Cast(sum(GP) AS DECIMAL) / Count(GP) < .50 AND CasT(sum(GP) AS DECIMAL) / Count(GP) >= .20 then 1 ELSE 0 END AS GC,
+CASE WHEN DimDistrictID = 34 then 'Perres Kasoti'
+	WHEN DimDistrictID = 11 then 'Borniface Tembo and Gilson Tembo' 
+	WHEN DimDistrictID = 27 then 'Daniel Lungu and Ignitius Luwaile'
+	WHEN DimDistrictID = 19 then 'Job Saliso and Evaristo Chinshe' 
+ELSE 'A' END as FDAFD,
+
+
+Case 
+	when sum(TotalCredit) / Count(Distinct DimSiteID) >= 912000 then 4 
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 912000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 600000 THEN 3 
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 600000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 350000 THEN 2 
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 350000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 250000 THEN 1
+	else 0 
+END as CreditTarget,
+
+Case 
+	when sum(TotalCredit) / Count(Distinct DimSiteID) >= 912000 then 'A' 
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 912000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 600000 THEN 'B'
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 600000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 350000 THEN 'C'
+	when sum(TotalCredit) / Count(Distinct DimSiteID)  < 350000  and sum(TotalCredit) / Count(Distinct DimSiteID) >= 250000 THEN 'D'
+	else 'F'  
+END as CreditTargetGrade,
+
+
+CASE 
+	WHEN sum(SCI) / Count(Distinct DimSiteID) >= 198 THEN 4 
+	when sum(SCI) / Count(Distinct DimSiteID) < 198  and sum(SCI) / Count(Distinct DimSiteID) >= 146 THEN 3 
+	when sum(SCI) / Count(Distinct DimSiteID) < 146  and sum(SCI) / Count(Distinct DimSiteID) >= 91 THEN 2 
+	when sum(SCI) / Count(Distinct DimSiteID) < 91  and sum(SCI) / Count(Distinct DimSiteID) >= 80 THEN 1 
+	else 0 
+END as Qualifiers,
+
+CASE 
+	WHEN sum(SCI) / Count(Distinct DimSiteID) >= 198 THEN 'A' 
+	when sum(SCI) / Count(Distinct DimSiteID) < 198  and sum(SCI) / Count(Distinct DimSiteID) >= 160 THEN 'B'
+	when sum(SCI) / Count(Distinct DimSiteID) < 160  and sum(SCI) / Count(Distinct DimSiteID) >= 91 THEN 'C'
+	when sum(SCI) / Count(Distinct DimSiteID) < 91  and sum(SCI) / Count(Distinct DimSiteID) >= 70 THEN 'D' 
+	else 'F'
+END as QualifierGrade,
+
+
+
+SUM(TotalRepaid) / SUM(TotalCredit) as PC,
+CASE 
+	WHEN SUM(TotalRepaid) / SUM(TotalCredit) >= .98 THEN 4 
+	when SUM(TotalRepaid) / SUM(TotalCredit) < .98  and SUM(TotalRepaid) / SUM(TotalCredit) >= .95 THEN 3 
+	when SUM(TotalRepaid) / SUM(TotalCredit) < .95  and SUM(TotalRepaid) / SUM(TotalCredit) >= .90 THEN 2 
+	when SUM(TotalRepaid) / SUM(TotalCredit) < .90  and SUM(TotalRepaid) / SUM(TotalCredit)>= .80 THEN 1 
+	else 0  
+END as Repaid
+From
+	groupInfo
+Group By
+	DistrictName, DimDistrictID
+Order by
+   DistrictName, DimDistrictID
