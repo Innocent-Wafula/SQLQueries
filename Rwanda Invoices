@@ -1,0 +1,66 @@
+Use RosterDataWarehouse;
+
+SELECT
+B.DistrictName
+    ,B.SiteName
+    ,B.GroupName
+                ,B.DimClientID
+				,B.GlobalClientID
+	,B.OAFID
+	,B.CreditCycleName
+	,B.BundleName
+	,B.BundleQuantity
+	,B.InputNames
+	,B.InputCredit
+               ,B.FirstName
+               ,B.LastName
+    ,CASE WHEN B.CreditCycleName = '2021A' THEN '2021A Order'
+	ELSE '2021B Order' END AS Cycle
+	--,CASE WHEN B.BundleName = 'SHS-20A' THEN 37250 ELSE 0 END AS NextSeason
+	,Case when BundleName = 'Biolite SHS' then B.TotalCredit/4 When InputNames = 'PICS 50KG Bag' then B.TotalCredit/2 when InputNames = 'PICS 100KG Bag' then B.TotalCredit/2 when InputNames = 'Tecno' then B.TotalCredit/2
+	when InputNames = 'GLP SKP200' then B.TotalCredit/2 when InputNames = 'GLP Pico' then B.TotalCredit/2 when InputNames = 'DLightS200' then B.TotalCredit/2 
+	when InputNames = 'Niwa 300XL' then B.TotalCredit/2 when InputNames = 'DLightS600' then B.TotalCredit/2 else B.TotalCredit end as TC
+    ,SC.AccountNumber
+	,R.[2021A_Enrollment Fee adjustment]
+	
+FROM v_ClientBundles AS B
+LEFT JOIN v_ClientSalesBizOps as SC
+ON B.GlobalClientID=SC.GlobalId 
+Left Join Temp_RW_Rollover_Amounts AS R
+on B.GlobalClientID=R.GlobalClientID
+WHERE B.CountryName = 'Rwanda' 
+AND B.SeasonName = '2021'
+AND B.DistrictName = @District
+AND sc.Season = '2021'
+and B.InputCredit > 0
+
+Union All
+
+
+Select 
+B.DistrictName, 
+	B.SiteName, 
+	B.GroupName, 
+	B.DimClientID,
+	B.GlobalClientID, 
+	B.OAFID, 
+	B.CreditCycleName, 
+	B.BundleName, 
+	B.BundleQuantity, 
+	B.InputNames, 
+	B.InputCredit, 
+	B.FirstName,
+	B.LastName,
+	CASE WHEN B.CreditCycleName = '2021A' THEN '2021A Order' Else B.CreditCycleName END AS Cycle, 
+	B.TotalCredit/4 as TC,
+	B.AccountNumber,
+	R.[2021A_Enrollment Fee adjustment]
+
+from v_ClientBundles as B
+Left Join Temp_RW_Rollover_Amounts AS R
+on B.GlobalClientID=R.GlobalClientID
+where B.CountryName = 'Rwanda'
+and B.SeasonName in ('2018','2019','2020')
+and B.InputNames = 'SHS'
+AND B.InputCredit > 0
+AND B.DistrictName = @District
