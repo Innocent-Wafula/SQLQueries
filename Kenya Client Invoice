@@ -1,0 +1,42 @@
+SELECT 
+	CI.CountryName
+	,CI.DistrictName
+	,CI.SiteName
+	,CI.GroupName
+	,CI.FirstName
+	,CI.LastName
+	,CI.OAFID 
+	,CI.BundleName
+	,CI.InputName
+	,CI.InputCredit
+	,CI.InputQuantity
+	,CI.DimClientId
+	,CI.AccountNumber
+	,CASE WHEN CI.BundleName = 'Sunking Pro 300' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Client Support Bundle Grevillea' THEN CI.InputCredit * 0.16 
+	WHEN CI.BundleName = 'Knapsack Sprayer' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Soil Improver' THEN CI.InputCredit * 0.16 
+	WHEN CI.BundleName = 'Sukuma' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Spinach' THEN CI.InputCredit * 0.16 
+	WHEN CI.BundleName = 'PICS Bag' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Carrot' THEN CI.InputCredit * 0.16 
+	WHEN CI.BundleName = 'Smart Phone' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Harvest Drying Sheet' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'Iron Sheet' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Storage Bag' THEN CI.InputCredit * 0.16 
+	 WHEN CI.BundleName = 'Grevillea Tree Kit' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Red Onion' THEN CI.InputCredit * 0.16 
+	 WHEN CI.Bundlename = 'JiT Basic Phone' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'JiT Harvers Drying Sheet' THEN CI.InputCredit * 0.16 
+	 WHEN CI.BundleName = 'Saga' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Sunking Charge' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'JiT Sunking Boom' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Sunking Boom' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'Managu' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Biolite SHS' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'Basic Phone' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Sunking Home with Radio' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'Eucalyptus tree Kit' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Tomato' THEN CI.InputCredit * 0.16
+	 WHEN CI.BundleName = 'Cabbage' THEN CI.InputCredit * 0.16 WHEN CI.InputName = 'Eucalyptus' THEN CI.InputCredit * 0.16
+	 WHEN CI.InputName = 'Grevillea Tree Kit' THEN CI.InputCredit * 0.16 WHEN CI.BundleName = 'Sun King Home' THEN CI.InputCredit * 0.16 
+	 WHEN CI.BundleName = 'Eucalyptus Tree Kit trial' THEN CI.InputCredit * 0.16  WHEN CI.BundleName = 'Client Support Bundle_Tree RCT' THEN CI.InputCredit * 0.16 
+	 WHEN CI.BundleName = 'SunKing Charge' THEN CI.InputCredit * 0.16  WHEN CI.BundleName = 'Sunking Home System' THEN CI.InputCredit * 0.16  
+	 WHEN CI.BundleName = 'S1 Smart Phone' THEN CI.InputCredit * 0.16  WHEN CI.BundleName = '500L Water Tank' THEN CI.InputCredit * 0.16 
+	 WHEN CI.BundleName = '300L Water Tank' THEN CI.InputCredit * 0.16 ELSE 0 END AS VAT
+
+
+FROM v_ClientInputs AS CI
+
+where CI.CountryName = 'Kenya'
+and CI.SeasonName = @Season
+and CI.DistrictName= @District
+and CI.InputCredit > 0
+ORDER BY SiteName,GroupName,OAFID,BundleName DESC 
