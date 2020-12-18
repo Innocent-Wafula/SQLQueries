@@ -1,4 +1,4 @@
-use rosterdatawarehouse;
+USE RosterDataWarehouse;
 
 --First Query
 with groupInfo as(
@@ -13,7 +13,6 @@ from
 where
 	CountryName = 'Zambia'
 	AND Season = '2021, Long Rain'
-	-- add parameter to allow the selection of District Names
 	and DistrictName = @District
 	and TotalCredit > 0
 	and TotalRepaid > 0
@@ -25,7 +24,6 @@ select
 	SUM(TotalCredit) As TotalCredit,sum(TotalRepaid) As TotalRepaid,
     sum(GP) As CompletedGroupsCount,
 	Count(GP) AS TGP,
-	-- Add FM Names
 	CASE WHEN DimSiteID in (11231, 2009, 2006, 2007, 2005, 2008) then 'Edmore Sibanda'
 WHEN DimSiteID in (1999, 1995, 1998, 1997, 19996) then 'Ireen Mukuswani'
 WHEN DimSiteID in (2014, 2010, 2011, 2012, 2013, 11232) then 'Marley Ngala'
@@ -49,46 +47,37 @@ WHEN DimSiteID in (1583, 1585, 11224, 11223, 1584) then 'Michelo Chiimbwe'
 WHEN DimSiteID in (1594, 1595, 1597, 1596) then 'Mutinta Muzyamba'
 WHEN DimSiteID in (1590, 11225, 1588, 11226, 1586,11227) then 'Paul Nyendwa'
 WHEN DimSiteID in (1576, 1587, 1574, 1577, 1575) then 'Steckias Mulinda' ELSE 'A' END as FM,
-
--- Determine Transaction Size Scores
 Case 
 	when sum(TotalCredit) >= 912000 then 4 
 	when sum(TotalCredit)  < 912000  and sum(TotalCredit) >= 600000 THEN 3 
-	when sum(TotalCredit) < 600000  and sum(TotalCredit) >= 300000 THEN 2 
-	when sum(TotalCredit) < 300000  and sum(TotalCredit) >= 250000 THEN 1
+	when sum(TotalCredit) < 600000  and sum(TotalCredit) >= 350000 THEN 2 
+	when sum(TotalCredit) < 350000  and sum(TotalCredit) >= 250000 THEN 1
 	else 0 
 END as CreditTarget,
-
--- Determine Transaction Size Grades
 
 Case 
 	when sum(TotalCredit) >= 912000 then 'A' 
 	when sum(TotalCredit)  < 912000  and sum(TotalCredit) >= 600000 THEN 'B'
-	when sum(TotalCredit) < 600000  and sum(TotalCredit) >= 300000 THEN 'C'
-	when sum(TotalCredit) < 300000  and sum(TotalCredit) >= 250000 THEN 'D' 
+	when sum(TotalCredit) < 600000  and sum(TotalCredit) >= 350000 THEN 'C'
+	when sum(TotalCredit) < 350000  and sum(TotalCredit) >= 250000 THEN 'D' 
 	else 'F' 
 END as CreditTargetGrade,
 
--- Determine Qualifier Scores
-
 CASE 
 	WHEN sum(SCI) >= 198 THEN 4 
-	when sum(SCI) < 198  and sum(SCI)>= 160 THEN 3 
-	when sum(SCI) < 160  and sum(SCI) >= 91 THEN 2 
-	when sum(SCI) < 91  and sum(SCI) >= 70 THEN 1 
+	when sum(SCI) < 198  and sum(SCI)>= 146 THEN 3 
+	when sum(SCI) < 146  and sum(SCI) >= 91 THEN 2 
+	when sum(SCI) < 91  and sum(SCI) >= 80 THEN 1 
 	else 0 
 END as Qualifiers,
 
--- Determine Qualifier Grades
 CASE 
 	WHEN sum(SCI) >= 198 THEN 'A' 
-	when sum(SCI) < 198  and sum(SCI)>= 160 THEN 'B'
-	when sum(SCI) < 160  and sum(SCI) >= 91 THEN 'C' 
-	when sum(SCI) < 91  and sum(SCI) >= 70 THEN 'D' 
+	when sum(SCI) < 198  and sum(SCI)>= 146 THEN 'B'
+	when sum(SCI) < 146  and sum(SCI) >= 91 THEN 'C' 
+	when sum(SCI) < 91  and sum(SCI) >= 80 THEN 'D' 
 	else 'F'
 END as QualifierGrade,
-
--- Determine Repayment Scores
 SUM(TotalRepaid) / SUM(TotalCredit) as PC,
 CASE 
 	WHEN SUM(TotalRepaid) / SUM(TotalCredit) >= .98 THEN 4 
