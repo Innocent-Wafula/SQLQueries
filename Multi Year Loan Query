@@ -1,0 +1,9 @@
+use RosterDataWarehouse;
+
+select SeasonName, DistrictName, SiteName, GroupName, DimClientID, OAFID, CreditCycleName, BundleName, BundleQuantity, InputNames, InputCredit, FirstName, LastName, AccountNumber, CreditPercentage as PercentRepayment, OperationalYear+2 as DueYear
+ FROM v_ClientBundles
+ WHERE CountryName = 'Rwanda'
+ and OperationalYear >= 2018
+ and InputNames = 'SHS'
+ AND BundleQuantity >=1
+ and BundleName in ('SHS-19B', 'SHS 18A','SHS-18B','SHS-19A','SHS 18A Late','SHS-20A','20A SHS W_Discount','19B SHS W_Discount','19A SHS W_Discount')
