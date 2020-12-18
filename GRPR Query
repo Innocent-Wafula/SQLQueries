@@ -1,0 +1,23 @@
+select 
+FirstName
+	,LastName
+	,OAFID
+	,LastRepaymentDate
+                ,DistrictName
+                ,SiteName
+                ,GroupName
+	,TotalCredit
+	,TotalRepaid
+	,TotalRemaining
+	,AccountNumber
+	,IsGroupLeader
+                ,DimGroupID
+	,GroupLeader
+	,Case when IsGroupLeader = 1 then Concat(FirstName, ' ', LastName) END AS GL
+
+from v_ClientSalesBizOps
+
+where CountryName = @Country
+and Season = @Season
+and DistrictName= @District
+Order By SiteName, GroupName ASC
