@@ -1,9 +1,9 @@
 use RosterDataWarehouse;
-
-select SeasonName, DistrictName, SiteName, GroupName, DimClientID, OAFID, CreditCycleName, BundleName, BundleQuantity, InputNames, InputCredit, FirstName, LastName, AccountNumber, CreditPercentage as PercentRepayment, OperationalYear+2 as DueYear
+Select SeasonName, DistrictName, SiteName, GroupName, DimClientID, OAFID, CreditCycleName, BundleName, BundleQuantity, InputNames, InputCredit, FirstName, LastName, AccountNumber, CreditPercentage as PercentRepayment, OperationalYear+2 as DueYear
  FROM v_ClientBundles
  WHERE CountryName = 'Rwanda'
- and OperationalYear >= 2018
+ and OperationalYear >= 2017
  and InputNames = 'SHS'
  AND BundleQuantity >=1
- and BundleName in ('SHS-19B', 'SHS 18A','SHS-18B','SHS-19A','SHS 18A Late','SHS-20A','20A SHS W_Discount','19B SHS W_Discount','19A SHS W_Discount')
+ and BundleName in ('SHS-19B', 'SHS 18A','SHS-18B','SHS-19A','SHS 18A Late','SHS-20A','20A SHS W_Discount','19B SHS W_Discount','19A SHS W_Discount','SHS 17A','SHS Phase 2 - 1 year','SHS Phase 2 - 2 year','SHS Phase 2 - 3 year','SHS Phase 2 - 4 year')
+
